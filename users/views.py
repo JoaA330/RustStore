@@ -106,7 +106,7 @@ def Logout(request, username):
         return JsonResponse({'Error': str(e)})
 
         
-        
+      
 def Get_user(request,username):
     if request.method != 'GET':
         JsonResponse({'Error' : 'only GET accepted'})
@@ -114,7 +114,19 @@ def Get_user(request,username):
         
     try:
         user = User.objects.get(userName = username)
-        return user
+        
+        return JsonResponse({
+            "User" : {
+                "userName" : user.userName,
+                "password" : user.password,
+                "money" : user.money,
+                "name" : user.name,
+                "online" : user.online,
+                "lastname": user.lastname,
+                "u_status" : user.u_status,
+                "location" : user.location
+            }
+        })
         
         
     except User.DoesNotExist:
