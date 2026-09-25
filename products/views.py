@@ -1,132 +1,23 @@
 from django.shortcuts import render
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from .models import Gun,Product,Transport,Tool,Armor
+from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
 from users.models import User
-import json
+from .serializers import ProductSerializer
 
-@csrf_exempt
+
+@api_view(['POST'])
 def Publish_Product(request):
-    if request.method != 'POST' :
-        return JsonResponse({'Error':'only method POST acepted'}) 
     
-    try:
-        #PRODUCT--
-        data = json.loads(request.body)
-        username = data.get('userName')
-        name = data.get('name')
-        category = data.get('category')
-        price = data.get('price')
-        description = data.get('description')
-        used = data.get('used')
-        author = data.get('author')
-        type = data.get('type')
-        maxspeed = data.get('maxSpeed')
-        charge = data.get('chargeLevel')
-        promagic = data.get('protectionForMagic')
-        proCourts = data.get('protectionForCouts')
-        proHits = data.get('protectionForHits')
-        agricult = data.get('agricultural')
-        
-        name_exists = Product.objects.filter(name = name, seller=username).first()
-        
-        if name_exists:
-            return JsonResponse({'Error':'the product already exists'}) 
-        
-        
-        if not all([username, name, category, price]):
-            return JsonResponse({'Error':'data incomplete'})
-        
-        
-        #GUN--
-        if category == 'Guns':
-            
-            if not all([author,type]):
-                return JsonResponse({'Error':'data incomplete'})
-            
-            
-            if type == 'Archer':
-                recommend = 'Archer'
-                
-            elif type == 'Magical':
-                recommend = 'Wizard'
-            
-            else:
-                recommend = 'Warrior'
-                
-            
-            p = Gun.objects.create(
-                name = name,
-                category = category,
-                price = price,
-                description = description,
-                used = used,
-                author = author,
-                type = type,
-                seller= username,
-                recommendedFor = recommend
-            )
-            
-            
-        #TRANSPORT--
-        elif category == 'Transport':
-            
-            if not all([maxspeed, charge]):
-                return JsonResponse({'Error':'data incomplete'})
-            
-            p = Transport.objects.create(
-                name = name,
-                category = category,
-                price = price,
-                description = description,
-                maxSpeed = maxspeed,
-                chargeLevel = charge,
-                seller= username
-            )
-          
-        #TOOL--    
-        elif category == 'Tools':  
-            
-            if not all([agricult]):
-                return JsonResponse({'Error':'data incomplete'})
-            
-            p = Tool.objects.create(
-                name = name,
-                category = category,
-                price = price,
-                description = description,
-                used = used,
-                agricultural = agricult,
-                seller= username
-            )
-            
-        #ARMOR--    
-        else:
-            if not all([proCourts, proHits, promagic]):
-                return JsonResponse({'Error':'data incomplete'})
-            
-            p = Armor.objects.create(
-                name = name,
-                category = category,
-                price = price,
-                description = description,
-                used = used,
-                protectionForMagic = promagic,
-                protectionForCourts = proCourts,
-                protectionForHits = proHits,
-                seller= username
-            )
-            
-        p.save()
-        return JsonResponse({'message':'successfully published'})
-        
-        
-                 
-    except json.JSONDecodeError:
-        return JsonResponse({'Error':'JSON incorrect format'})
+    data = ProductSerializer(data=request.data)
+    if data.is_valid():
+        data.save()
+        return Response({'message':'product successfully published'}, status=201)
     
-    except Exception as e:
-        return JsonResponse({'Error':str(e)})
+    return Response(data.errors, status=400)
         
 
 
